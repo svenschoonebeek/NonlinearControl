@@ -26,10 +26,22 @@ class ObjectiveFunction:
         return np.array([v, 1/m * (u - of.k_0 * r * np.exp(-r) - of.h_d * v - of.k_c * interaction)])
 
     @staticmethod
-    def objective():
-        pass
-
-
+    def objective(
+            u: np.ndarray, Np_agents: np.ndarray, u_global_set: np.ndarray, x_global_set: np.ndarray,
+            i: int, t: float, dt: float, Q: np.ndarray, R: np.ndarray, V_f: float):
+        x_objective, u_objective = 0, 0
+        for agent, N_p in enumerate(Np_agents):
+            x_term_static = []
+            u_term_dynamic = []
+            for delta, t in enumerate(np.arange(t+dt, N_p, dt)):
+                x = x_global_set[delta][agent]
+                x_term_static.append(x.T @ Q @ x)
+                if agent == i:
+                    u_term_dynamic.append(u.T @ R @ u)
+                else:
+                    u_term_dynamic.append(u_global_set[delta][agent].T @ R @ u_global_set[delta][agent])
+            x_objective += np.sum(x_term_static, axis=0); u_objective += np.sum(u_term_dynamic, axis=0)
+        return np.sum(x_objective) + np.sum(u_objective) + V_f
 
     @staticmethod
     def predict_state(r: np.ndarray, v: float, u: float, i: int, m: float, dt: float) -> np.ndarray:

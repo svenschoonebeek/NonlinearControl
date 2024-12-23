@@ -20,6 +20,7 @@ class Supervisor:
         self.U_feasible : np.ndarray = np.array([-1.5, 1.5])
         self.Q : np.ndarray = np.array([])
         self.R: np.ndarray = np.array([])
+        self.Np_agents: np.ndarray = np.array([])
 
     def initialize_global_state(self):
         r0, v0 = [], [] #np.zeros(len(self.m))
