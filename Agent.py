@@ -4,40 +4,50 @@ from Supervisor import Supervisor
 
 class Agent:
 
-    def __init__(self, i: int, m: float):
+    def __init__(self, i: int, m: float, dt: float, t: float, X_feasible: np.ndarray, U_feasible: np.ndarray, x_global: np.ndarray, n_agents : int):
         self.of = ObjectiveFunction
         self.sf = Supervisor
         self.i : int = i
         self.m : float  = m
-        self.t : float = 0
+        self.t : float = t
         self.k : int = 0
-        self.u_current : np.ndarray = np.array([])
+        self.n_agents = n_agents
+        self.x_global: [] = list(x_global)
+        self.N_p: int = 50
+        self.u_current : np.ndarray = np.zeros(self.N_p)
         self.u_past : np.ndarray = np.array([])
-        self.N_p : int = 50
-        self.dt : float = 0.01
-        self.x_current: np.ndarray = np.array([])
-        self.x_past : np.ndarray = np.array([])
-        self.x0 : np.ndarray = np.array([0, 0])
-        self.X_feasible : np.ndarray = np.array([[-5, 5], [-2, 2]])
+        self.dt : float = dt
+        self.X_feasible : np.ndarray = X_feasible
+        self.U_feasible : np.ndarray = U_feasible
 
-    def predict_state(self, x: np.ndarray, u: float) -> np.ndarray:
-        x_dot = self.of.f_i(self.i, self.m, u, float(x[0]), float(x[1]))
-        return x + x_dot * self.dt
+    def predict_input_sequence(self, u_global_set: np.ndarray, x_global_set: np.ndarray):
+        pass
 
-    def initialize(self):
-        if self.t != 0:
-            self.u_current = np.concatenate((self.u_past[:-1], np.array([self.u_past[-2]])))
-            self.x0 = np.array([self.x_past[1]])
-        else:
-            self.u_current = np.zeros(self.N_p)
-            self.x0 = np.array([np.random.uniform(self.X_feasible[0][0], self.X_feasible[0][1]),
-                                np.random.uniform(self.X_feasible[1][0], self.X_feasible[1][1])])
-        x_predict = []
+
+    def predict_state_sequence(self):
+        x_predict_global_k = self.x_global[0].copy()
         for k, _ in enumerate(np.arange(self.t, self.N_p, 1)):
-            if k == 0:
-                x_predict.append(self.predict_state(self.x0, float(self.u_current[0])))
-            else:
-                x_predict.append(self.predict_state(x_predict[-1], float(self.u_current[k-1])))
+            x_predict_local_k = self.of.predict_state(
+                np.array(x_predict_global_k[:self.n_agents]),
+                float(x_predict_global_k[self.n_agents + self.i]),
+                float(self.u_current[k]), self.i, self.m, self.dt)
+            x_predict_global_k = self.x_global[0].copy(); x_predict_global_k[self.i::self.i + 2] = x_predict_local_k
+            self.x_global.append(x_predict_global_k)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
