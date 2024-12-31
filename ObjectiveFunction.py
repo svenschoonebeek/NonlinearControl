@@ -33,13 +33,12 @@ class ObjectiveFunction:
         for agent, N_p in enumerate(Np_agents):
             x_term_static = []
             u_term_dynamic = []
-            for delta, t in enumerate(np.arange(t+dt, N_p, dt)):
-                x = x_global_set[delta][agent]
-                x_term_static.append(x.T @ Q @ x)
+            for delta, _ in enumerate(np.arange(t, N_p, dt)):
+                x_term_static.append(x_global_set[agent][delta].T @ Q @ x_global_set[agent][delta])
                 if agent == i:
-                    u_term_dynamic.append(u.T @ R @ u)
+                    u_term_dynamic.append(u[delta].T @ R @ u[delta])
                 else:
-                    u_term_dynamic.append(u_global_set[delta][agent].T @ R @ u_global_set[delta][agent])
+                    u_term_dynamic.append(u_global_set[agent][delta].T @ R @ u_global_set[agent][delta])
             x_objective += np.sum(x_term_static, axis=0); u_objective += np.sum(u_term_dynamic, axis=0)
         return np.sum(x_objective) + np.sum(u_objective) + V_f
 
