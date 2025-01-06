@@ -33,14 +33,29 @@ class ObjectiveFunction:
         for agent, N_p in enumerate(Np_agents):
             x_term_static = []
             u_term_dynamic = []
-            for delta, _ in enumerate(np.arange(t, N_p, dt)):
-                print (len(np.arange(t, N_p, dt)), len(x_global_set[agent]))
+            for delta, _ in enumerate(np.arange(0, N_p, 1)):
                 x_term_static.append(x_global_set[agent][delta].T @ Q @ x_global_set[agent][delta])
                 if agent == i:
                     #print (u)
                     u_term_dynamic.append(u[delta].T * u[delta])
                 else:
                     u_term_dynamic.append(u_global_set[agent][delta].T * u_global_set[agent][delta])
+            x_objective += np.sum(x_term_static, axis=0); u_objective += np.sum(u_term_dynamic, axis=0)
+        return np.sum(x_objective) + np.sum(u_objective) + V_f
+
+    @staticmethod
+    def weights(gamma: np.ndarray, u_past: np.ndarray, u_current : np.ndarray,
+                Np_agents: np.ndarray, x_global_set: np.ndarray, Q: np.ndarray, V_f: float):
+        x_objective, u_objective = 0, 0
+        gamma_reshaped = gamma.reshape(np.array(u_current).shape)
+        u_weighted = gamma_reshaped * u_current + (1 - gamma_reshaped) * u_past
+        for agent, N_p in enumerate(Np_agents):
+            x_term_static = []
+            u_term_dynamic = []
+            for delta, _ in enumerate(np.arange(0, N_p, 1)):
+                print (delta)
+                x_term_static.append(x_global_set[agent][delta].T @ Q @ x_global_set[agent][delta])
+                u_term_dynamic.append(u_weighted[agent][delta].T * u_weighted[agent][delta])
             x_objective += np.sum(x_term_static, axis=0); u_objective += np.sum(u_term_dynamic, axis=0)
         return np.sum(x_objective) + np.sum(u_objective) + V_f
 
