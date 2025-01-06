@@ -23,7 +23,7 @@ class ObjectiveFunction:
             interaction = 2 * r[1] - r[0] - r[2]
         elif i == 2:
             interaction = r[2] - r[1]
-        return np.array([v, 1/m * (u - of.k_0 * r * np.exp(-r) - of.h_d * v - of.k_c * interaction)])
+        return np.array([v, 1/m * (u - of.k_0 * r[i] * np.exp(-r[i]) - of.h_d * v - of.k_c * interaction)])
 
     @staticmethod
     def objective(
@@ -34,11 +34,13 @@ class ObjectiveFunction:
             x_term_static = []
             u_term_dynamic = []
             for delta, _ in enumerate(np.arange(t, N_p, dt)):
+                print (len(np.arange(t, N_p, dt)), len(x_global_set[agent]))
                 x_term_static.append(x_global_set[agent][delta].T @ Q @ x_global_set[agent][delta])
                 if agent == i:
-                    u_term_dynamic.append(u[delta].T @ R @ u[delta])
+                    #print (u)
+                    u_term_dynamic.append(u[delta].T * u[delta])
                 else:
-                    u_term_dynamic.append(u_global_set[agent][delta].T @ R @ u_global_set[agent][delta])
+                    u_term_dynamic.append(u_global_set[agent][delta].T * u_global_set[agent][delta])
             x_objective += np.sum(x_term_static, axis=0); u_objective += np.sum(u_term_dynamic, axis=0)
         return np.sum(x_objective) + np.sum(u_objective) + V_f
 
@@ -57,7 +59,7 @@ class ObjectiveFunction:
         P = cp.Variable((n, n), symmetric=True)
         for i in np.arange(0, len(u_f), 1):
             f_terminal.append(of.f_i(i, m[i], u_f[i], x_f[:len(m)], float(x_f[len(m) + i])))
-        constraints = [P >> 0, 2 * x_f.T @ P @ np.array(f_terminal).flatten() <= 0]
+        constraints = [P >> cp.Constant(1e-6 * np.eye(n)), 2 * x_f.T @ P @ np.array(f_terminal).flatten() <= 0]
         objective = cp.Minimize(cp.trace(P))
         problem = cp.Problem(objective, constraints)
         problem.solve()
