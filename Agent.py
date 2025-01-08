@@ -29,7 +29,8 @@ class Agent:
     def predict_input_sequence(self, u_global_set: np.ndarray, x_global_set: np.ndarray, V_f: float):
         self.J_past = self.J_current
         bounds = [(self.U_feasible[0], self.U_feasible[1])]
-        result = minimize(self.of.objective, self.u_current, args=(self.Np_agents, u_global_set, x_global_set, self.i, self.t, self.dt, self.Q, self.R, V_f), bounds=bounds, method='SLSQP')
+        result = minimize(self.of.objective, self.u_current, args=(self.Np_agents, u_global_set, x_global_set, self.i, self.t, self.dt, self.Q, self.R, V_f), bounds=bounds, method='SLSQP', options={'maxiter': 100, 'ftol': 1e-6, 'disp': True, 'step_size': 0.01})
+        print (self.J_current)
         self.J_current, self.u_current = result.fun, result.x
 
     def weigh_input_sequence(self, gamma: float, u_past: np.ndarray):

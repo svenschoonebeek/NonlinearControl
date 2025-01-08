@@ -53,7 +53,6 @@ class ObjectiveFunction:
             x_term_static = []
             u_term_dynamic = []
             for delta, _ in enumerate(np.arange(0, N_p, 1)):
-                print (delta)
                 x_term_static.append(x_global_set[agent][delta].T @ Q @ x_global_set[agent][delta])
                 u_term_dynamic.append(u_weighted[agent][delta].T * u_weighted[agent][delta])
             x_objective += np.sum(x_term_static, axis=0); u_objective += np.sum(u_term_dynamic, axis=0)

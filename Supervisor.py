@@ -16,7 +16,7 @@ class Supervisor:
         self.u_final : np.ndarray = np.empty((0, 3))
         self.agents : [] = []
         self.max_t : float = 3
-        self.max_iter : float = 100
+        self.max_iter : float = 10
         self.dt : float = 0.01
         self.m = np.array([1.5, 2, 1])
         self.n_agents = len(self.m)
@@ -26,7 +26,7 @@ class Supervisor:
         self.gamma_feasible : np.ndarray = np.array([0, 1])
         self.Q : np.ndarray = np.diag([2, 0.05, 2, 0.05, 2, 0.05])
         self.R: np.ndarray = np.diag([0.1, 1, 0.1])
-        self.Np_agents: np.ndarray = np.array([500, 500, 500])
+        self.Np_agents: np.ndarray = np.array([100, 100, 100])
         self.tolerance : float = 0.01
         self.timeout : int = 60
 
@@ -65,17 +65,18 @@ class Supervisor:
                             self.x_current = np.array(self.x_global[:, :2]).flatten()
                             if t == 0:
                                 #self.u_global = [np.zeros(self.Np_agents[0]), np.zeros(self.Np_agents[1]), np.zeros(self.Np_agents[2])]
-                                self.u_global = [np.random.uniform(self.U_feasible[0], self.U_feasible[1], Np) for k, Np in
-                                                 enumerate(self.Np_agents)]
+                                #self.x_global = [np.zeros(self.Np_agents[0]), np.zeros(self.Np_agents[1]), np.zeros(self.Np_agents[2])]
+                                self.u_global = [np.random.uniform(-0.1, 0.1, Np) for k, Np in enumerate(self.Np_agents)]
                                 a1.u_current, a2.u_current, a3.u_current = self.u_global[0], self.u_global[1], self.u_global[2]
-                                u_global_past = [np.random.uniform(self.U_feasible[0], self.U_feasible[1], Np) for k, Np in
-                                                 enumerate(self.Np_agents)]
                         a1.x_global, a2.x_global, a3.x_global = [], [], []
                         a1.t, a2.t, a3.t = t, t, t
+                        #print(self.x_global)
                         executor.submit(a1.predict_state_sequence(self.x_current))
                         executor.submit(a2.predict_state_sequence(self.x_current))
                         executor.submit(a3.predict_state_sequence(self.x_current))
                         self.x_global = [a1.x_global, a2.x_global, a3.x_global]
+                        print(self.u_global)
+                        #print (self.x_global)
                         x_f = np.concatenate((a1.x_global[-1][:2], a2.x_global[-1][2:4], a3.x_global[-1][4:6]))
                         u_f = np.array([a1.u_current[-1], a2.u_current[-1], a3.u_current[-1]])
                         V_f = self.compute_lyapunov(x_f, u_f)
@@ -85,20 +86,20 @@ class Supervisor:
                         bounds = [(self.gamma_feasible[0], self.gamma_feasible[1])]
                         guess = np.array([np.random.uniform(self.gamma_feasible[0], self.gamma_feasible[1], Np) for k, Np in
                                                  enumerate(self.Np_agents)]).ravel()
-                        result = minimize(self.of.weights, np.array(guess),
-                                          args=(self.u_global, [a1.u_current, a2.u_current, a3.u_current], self.Np_agents, self.x_global, self.Q, V_f),
-                                          bounds=bounds, method='SLSQP')
-                        gamma = result.x
-                        executor.submit(a1.weigh_input_sequence(gamma[0], self.u_global[0]))
-                        executor.submit(a2.weigh_input_sequence(gamma[1], self.u_global[1]))
-                        executor.submit(a3.weigh_input_sequence(gamma[2], self.u_global[2]))
+                        #result = minimize(self.of.weights, np.array(guess),
+                        #                  args=(self.u_global, [a1.u_current, a2.u_current, a3.u_current], self.Np_agents, self.x_global, self.Q, V_f),
+                        #                  bounds=bounds, method='SLSQP', options={'maxiter': 100, 'ftol': 1e-6, 'disp': True, 'step_size': 0.01})
+                        #gamma = result.x
+                        #executor.submit(a1.weigh_input_sequence(gamma[0], self.u_global[0]))
+                        #executor.submit(a2.weigh_input_sequence(gamma[1], self.u_global[1]))
+                        #executor.submit(a3.weigh_input_sequence(gamma[2], self.u_global[2]))
                         self.u_global = [a1.u_current, a2.u_current, a3.u_current]
                         if (np.abs(a1.J_current - a1.J_past) < a1.tolerance) and (np.abs(a2.J_current - a2.J_past) < a2.tolerance) and (np.abs(a3.J_current - a3.J_past) < a3.tolerance):
                             self.u_final = np.vstack((self.u_final, [a1.u_current[0], a2.u_current[0], a3.u_current[0]]))
                             self.x_final.append(self.x_current)
                         else:
                             print("No convergence yet, going to iteration " + str(k))
-                            print ("Differences J: " + str(np.abs(a1.J_current - a1.J_past)) + ", " + str(np.abs(a2.J_current - a2.J_past)) + ", " + str(np.abs(a3.J_current - a3.J_past)))
+                            print ("Differences J: " + str(a1.J_current - a1.J_past) + ", " + str(a2.J_current - a2.J_past) + ", " + str(a3.J_current - a3.J_past))
                     signal.alarm(0)
             except TimeoutError: print("Timeout, possibly non-convergent")
 
